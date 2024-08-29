@@ -63,7 +63,7 @@ def lex_max_flow_over_time(
             # Use the super-source and the terminal as source and sink, respectively.
             g = StaticFlow(max_flow_min_cost(R, super_source, terminal, capacity=capacity, weight=transit))
         else:
-            G_ext.add_edge(terminal, super_source, **{transit: -T})
+            G_ext.add_edge(terminal, super_source, **{transit: -(T+1)})
 
             # Get the residual network of f in the newly constructed network G.
             R = f.get_resnet(G_ext, capacity=capacity, weight=transit)
