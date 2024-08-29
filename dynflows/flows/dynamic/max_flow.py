@@ -6,7 +6,6 @@ from typing import List, Any, Set, Union, Tuple
 
 from dynflows.flows.static.circulation import min_cost_circulation
 from dynflows.flows.dynamic.flow import DynamicFlow, TemporallyRepeatedFlow
-from dynflows.flows.dynamic.cut_over_time import CutOverTime
 
 
 def construct_extended_network(
@@ -110,37 +109,3 @@ def max_flow_over_time(
         return value, dyn_flow
 
     return value
-
-
-def min_cut_over_time(
-        G: nx.DiGraph, 
-        sources: Set[Any] | List[Any] | Any, 
-        sinks: Set[Any] | List[Any] | Any, 
-        T: int, 
-        capacity='capacity', 
-        transit='transit') -> CutOverTime:
-    
-    if not isinstance(sources, list) and not isinstance(sources, set):
-        sources = [sources]
-
-    if not isinstance(sinks, list) and not isinstance(sinks, set):
-        sinks = [sinks]
-
-    # If there are no sources or sinks, it is impossible to send flow.
-    if len(sources) == 0 or len(sinks) == 0:        
-        return None
-    
-    # Construct the extended network by adding a nodes 'super-source' and 'super-sink'.
-    extended_network = construct_extended_network(G, sources, sinks, T, transit)
-
-    # Compute the minimum cost circulation in the modified graph.
-    flow = min_cost_circulation(extended_network, capacity=capacity, weight=transit)
-
-    # Get the residual network of the circulation in the extended network.
-    resnet = flow.get_resnet(extended_network, capacity=capacity, costs=transit)
-
-    alphas = single_source_bellman_ford_path_length(resnet, 'super-source', weight=transit)
-    alphas = {node: alphas[node] for node in G.nodes if node in alphas.keys()}
-
-    return CutOverTime(alphas)
-

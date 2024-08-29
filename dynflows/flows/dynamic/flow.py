@@ -5,7 +5,6 @@ from abc import abstractmethod
 from typing import List, Dict, Any, Set, Tuple
 
 from dynflows.utils.path import ArcType, Path
-from dynflows.flows.dynamic.cut_over_time import CutOverTime
 
 
 class DynamicFlow:
@@ -54,6 +53,14 @@ class DynamicFlow:
 
 class TemporallyRepeatedFlow(DynamicFlow):
     def __init__(self, paths: List[Tuple[Path, int]], T: int, ignore_nodes: List[Any] = []) -> None:
+        """Data structure that maintains a list of paths and computes the flow value at arcs based on temporally repetition of
+        these paths.
+
+        Args:
+            paths (List[Tuple[Path, int]]): A collection of paths and corresponding weights.
+            T (int): The time horizon of the temporal repetition.
+            ignore_nodes (List[Any], optional): Nodes that should be ignored. These are usually super-sources and super-sinks. Defaults to [].
+        """
         super().__init__(T)
         self.__paths = paths
         self.__ignore_nodes = set(ignore_nodes)
@@ -125,9 +132,6 @@ class TemporallyRepeatedFlow(DynamicFlow):
     
     def covers_node(self, u) -> bool:
         return any(path.has_node(u) for path, _ in self.__paths)
-    
-    def to_cut_over_time(self, G: nx.DiGraph):
-        return CutOverTime({node: min([path.get_dist_to(node) for path, _ in self.__paths]) for node in G.nodes() if self.covers_node(node)})
     
     def __str__(self) -> str:
         return '\n'.join(str(path) + f' (value={value})' for path, value in self.__paths)

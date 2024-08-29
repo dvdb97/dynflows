@@ -1,6 +1,6 @@
 import networkx as nx
 import numpy as np
-import mcf_python
+import sys
 
 from typing import Any, Set, Tuple, Literal
 from itertools import combinations
@@ -8,12 +8,19 @@ from random import choice
 from tqdm import tqdm
 
 from dynflows.flows.dynamic.flow import TemporallyRepeatedFlow
+from dynflows.flows.dynamic.time_horizon import get_upper_bound_of_T
 from dynflows.flows.dynamic.max_flow import max_flow_over_time
 from dynflows.flows.dynamic.lex_max import lex_max_flow_over_time
 from dynflows.search import find_max_feasible, find_min_feasible
 
 from dynflows.sfm.naive import lazy_sfm_naive, sfm_naive
 from dynflows.sfm.orlin import sfm_orlin
+
+try:
+    import mcf_python
+    print('Using Rust backend for min-cost flows')
+except:
+    print('Did not find Rust backend. Using Python implementation.')
 
 
 def get_out_flow(
@@ -65,7 +72,10 @@ class MaxOutFlow:
         src_idx = [self.__nodes_idx[n] for n in (self.__sources & A)]
         snk_idx = [self.__nodes_idx[n] for n in (self.__sinks - A)]
 
-        return mcf_python.max_dynamic_flow_value(len(self.__G.nodes), self.__arcs, T, src_idx, snk_idx, self.__caps, self.__transits)
+        value = mcf_python.max_dynamic_flow_value(len(self.__G.nodes), self.__arcs, T, src_idx, snk_idx, self.__caps, self.__transits)
+        assert value != -1, 'min-cost flow computation was unsuccessful.'
+
+        return value
     
 
 class Greedy:
@@ -181,7 +191,7 @@ def __feasibility_orlin(
         return_minimizer=False,
         lazy=True,
         max_flow_method: MaxOutFlow = None) -> bool:
-    """_summary_
+    """Determine feasibility of a dynamic transshipment instance using Orlin's algorithm for submodular function minimization.
 
     Args:
         G (nx.DiGraph): Check feasibility of a dynamic transshipment instance using Orlin's algorithm for SFM.
@@ -194,7 +204,7 @@ def __feasibility_orlin(
         max_flow_method (MaxOutFlow, optional): The max flow over time method to use. Optional. Defaults to None.
 
     Returns:
-        bool: True if feasible, False otherwise.
+        bool: True if feasible, False otherwise. Also returns the minimizer if return_minimizer is True.
     """
     # Dismiss any instance for which the sum of balances isn't 0.
     assert sum(b for _, b in G.nodes(data=balance, default=0)) == 0, "The sum of balances must be 0!"
@@ -352,6 +362,12 @@ def __tweak_capacity(
         # Compute how the out-flow changes if new termimal is added to the parametrized network with the current choice of alpha.
         G_ext.nodes[node][balance] = 1 if is_source else -1
 
+        # If available, use the Rust backend.
+        if 'mcf_python' in sys.modules:
+            max_flow_method = MaxOutFlow(G_ext, balance, capacity, transit)
+        else:
+            max_flow_method = None
+
         Q_before = Q
         Q_after = Q | {node}
         
@@ -371,7 +387,7 @@ def __tweak_capacity(
         G_ext.nodes[node][balance] = b
         G_ext.nodes[first_term][balance] += -b
 
-        return is_feasible(G_ext, T, balance=balance, capacity=capacity, transit=transit, method=method, max_flow_method=MaxOutFlow(G_ext, balance, capacity, transit))
+        return is_feasible(G_ext, T, balance=balance, capacity=capacity, transit=transit, method=method, max_flow_method=max_flow_method)
 
     # Compute the optimal alpha and set the arc's capacity to it.
     if search_method == 'binary':
@@ -383,10 +399,6 @@ def __tweak_capacity(
     b = bal_changes[alpha]
 
     return alpha, b
-
-
-def __discrete_newton_transit():
-    pass
 
 
 def __tweak_transit(
@@ -446,6 +458,12 @@ def __tweak_transit(
         # Compute how the out-flow changes if new termimal is added to the parametrized network with the current choice of alpha.
         G_ext.nodes[node][balance] = 1 if is_source else -1
 
+        # If available, use the Rust backend.
+        if 'mcf_python' in sys.modules:
+            max_flow_method = MaxOutFlow(G_ext, balance, capacity, transit)
+        else:
+            max_flow_method = None
+
         Q_before = Q
         Q_after = Q | {node}
         b = get_out_flow(G_ext, Q_after, T, balance, capacity, transit) - get_out_flow(G_ext, Q_before, T, balance, capacity, transit)
@@ -464,7 +482,7 @@ def __tweak_transit(
         G_ext.nodes[node][balance] = b
         G_ext.nodes[first_term][balance] += -b
 
-        return is_feasible(G_ext, T, balance=balance, capacity=capacity, transit=transit, method=method, max_flow_method=MaxOutFlow(G_ext, balance, capacity, transit))
+        return is_feasible(G_ext, T, balance=balance, capacity=capacity, transit=transit, method=method, max_flow_method=max_flow_method)
 
     # Compute the optimal delta and set the arc's transit time to it.
     delta = find_min_feasible(func, max_delta)
@@ -520,6 +538,12 @@ def __find_tight(
     # Dummy balance to mark the node as a terminal node.
     G_ext.nodes[node][balance] = 1 if is_source else -1
 
+    # If available, use the Rust backend.
+    if 'mcf_python' in sys.modules:
+        max_flow_method = MaxOutFlow(G_ext, balance, capacity, transit)
+    else:
+        max_flow_method = None
+
     Q_before = Q
     Q_after = Q | {node}
     b = get_out_flow(G_ext, Q_after, T, balance, capacity, transit) - get_out_flow(G_ext, Q_before, T, balance, capacity, transit)
@@ -527,7 +551,7 @@ def __find_tight(
     G_ext.nodes[node][balance] = b
     G_ext.nodes[first_term][balance] += -b
 
-    feasible, tight_set = is_feasible(G_ext, T, balance, capacity, transit, method, return_minimizer=True, max_flow_method=MaxOutFlow(G_ext, balance, capacity, transit))
+    feasible, tight_set = is_feasible(G_ext, T, balance, capacity, transit, method, return_minimizer=True, max_flow_method=max_flow_method)
 
     assert not feasible, "The constructed network has to be infeasible."
 
@@ -600,7 +624,7 @@ def dynamic_transshipment(
 
             # Pick a terminal that changes the out-flow as much as possible.
             candidates = list(R - Q)  
-            s = choice(candidates)
+            s = candidates[0]
             
             n, _ = s
             is_source = G.nodes[n][balance] > 0
@@ -676,6 +700,9 @@ def dynamic_transshipment(
                     G_ext.nodes[n2][balance] = b
                     G_ext.nodes[(n, 0)][balance] += -b
 
+                    assert __is_tight(G_ext, Q_1, T, balance, capacity, transit), "Q_1 is no longer tight."
+                    assert __is_tight(G_ext, Q_1 | { n2 }, T, balance, capacity, transit), "Q_2 is no longer tight."
+
                     # Find a tight set by reducing the newly found delta by one.
                     W = __find_tight(G_ext, Q_1, n2, n, is_source, T, balance, capacity, transit, method=method)
 
@@ -685,15 +712,18 @@ def dynamic_transshipment(
                     terminals_.append(n2)
                 else:
                     G_ext.add_edge(n, n2, **{capacity: 1})
-                    delta, b = __tweak_transit(G_ext, R, n, n2, is_source, T, balance, capacity, transit, method)
+                    delta, b = __tweak_transit(G_ext, Q_1, n, n2, is_source, T, balance, capacity, transit, method)
 
                     # Add the computed delta and balance changes to the extended network.
                     G_ext.edges[n, n2][transit] = delta
                     G_ext.nodes[n2][balance] = b
                     G_ext.nodes[(n, 0)][balance] += -b
 
+                    assert __is_tight(G_ext, Q_1, T, balance, capacity, transit), "Q_1 is no longer tight."
+                    assert __is_tight(G_ext, Q_1 | { n2 }, T, balance, capacity, transit), "Q_2 is no longer tight."
+
                     # Find a tight set by reducing the newly found delta by one.
-                    W = __find_tight(G_ext, R, n, n2, is_source, T, balance, capacity, transit, method=method)
+                    W = __find_tight(G_ext, Q_1, n, n2, is_source, T, balance, capacity, transit, method=method)
 
                     assert __is_tight(G_ext, W, T, balance, capacity, transit), "The identified W is not tight!"
                     
@@ -736,7 +766,7 @@ def dynamic_transshipment(
         assert __is_tight(G_ext, A, T, balance, capacity, transit), "Not all sets in the chain are tight!"
 
     # Compute the permutation arising from the chain.
-    perm = [next(iter(chain[i+1] - chain[i])) for i in range(len(chain)-1)]
+    perm = [list(chain[i+1] - chain[i])[0] for i in range(len(chain)-1)]
     assert len(perm) == len(chain)-1 and len(perm) == len(terminals_), "Some element is missing."
 
     # Compute a lexiciograpically maximum flow over time which will result in a solution of the given transshipment instance.
@@ -754,19 +784,18 @@ def quickest_transshipment(
         capacity='capacity', 
         transit='transit',
         sfm_method: Literal['orlin', 'naive'] = 'orlin',
-        search_method: Literal['binary', 'newton'] = 'newton') -> Tuple[TemporallyRepeatedFlow, int]:
-    """_summary_
+        search_method: Literal['binary', 'newton'] = 'binary') -> Tuple[TemporallyRepeatedFlow, int]:
+    """Compute a dynamic transshipment with minimum feasible time horizon for the given dynamic network.
 
     Args:
-        G (nx.DiGraph): _description_
-        balance (str, optional): _description_. Defaults to 'balance'.
-        capacity (str, optional): _description_. Defaults to 'capacity'.
-        transit (str, optional): _description_. Defaults to 'transit'.
-        sfm_method (Literal['orlin', 'naive'], optional): _description_. Defaults to 'orlin'.
-        search_method (Literal['binary', 'newton'], optional): _description_. Defaults to 'newton'.
-
+        G (nx.DiGraph): The network to compute the flow in.
+        balance (str, optional): The node balances. Missing values for a node are interpreted as 0. Defaults to 'balance'.
+        capacity (str, optional): The arc attribute representing an arc's capacity. Defaults to 'capacity'.
+        transit (str, optional): The arc attribute representing an arc's transit time. Defaults to 'transit'.
+        sfm_method (Literal['orlin', 'naive'], optional): The method to use for SFM. Defaults to 'orlin'.
+        search_method (Literal['binary', 'newton'], optional): The method to use for the parametric search. Defaults to 'binary'.
     Returns:
-        Tuple[DynamicFlow, int]: _description_
+        Tuple[DynamicFlow, int]: Returns the resulting flow over time and the corresponding minimum time horizon.
     """
     assert sum(b for _, b in G.nodes(data=balance, default=0)) == 0, "The sum of balances must be 0!"
 
@@ -782,7 +811,10 @@ def quickest_transshipment(
         raise NotImplementedError()
     
     if search_method == 'binary':
-        T = find_min_feasible(feasibility_method, 100, verbose=True)
+        # Get an upper bound on T*
+        T_max = get_upper_bound_of_T(G, balance, transit)
+
+        T = find_min_feasible(feasibility_method, T_max, verbose=True)
     elif search_method == 'newton':
         T = discrete_newton(G, feasibility_method, 0, max_out_flow, balance, capacity, transit)
     else:

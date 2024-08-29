@@ -1,6 +1,6 @@
 
 
-def find_max_feasible(func, max_v) -> int:
+def find_max_feasible(func, max_v, verbose=False) -> int:
     """Given a function mapping returning True for every i <= n
     and False for i > n, find n via binary search.
 
@@ -14,6 +14,9 @@ def find_max_feasible(func, max_v) -> int:
     left, right = 0, max_v
 
     while left < right:
+        if verbose:
+            print(f'[{left}, {right}]\r')
+            
         v = (left + right) // 2 + 1
         feas = func(v)
 
