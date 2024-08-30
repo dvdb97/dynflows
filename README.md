@@ -112,6 +112,7 @@ flow.get_excess(5, 8)
 
 ### Compute a quickest integral dyamic transshipment:
 ``` Python
+from dynflows.flows.dynamic import quickest_transshipment
 
 # ...
 # ... construct network ...
