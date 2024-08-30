@@ -88,6 +88,7 @@ rslt, violated = is_feasible(G, T, return_violated=True, lazy=False)
 
 ### Compute an integral dynamic transshipment:
 ``` Python
+from dynflows.flows.dynamic import dynamic_transshipment
 
 # ...
 # ... construct network ...
