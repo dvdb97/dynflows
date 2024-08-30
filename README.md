@@ -14,7 +14,31 @@ A Python implementation of various algorithms for network flows over time. This 
 
 # Usage
 
-Compute a maximum flow over time:
+### Construct a network using NetworkX:
+``` Python
+import networkx as nx
+
+G = nx.DiGraph()
+
+# Add a source 0 with supply of 20 and a sink 1 with demand of -20
+G.add_nodes_from([
+    (0, {'balance': 20},
+    (1, {'balance': -20}
+])
+
+# Connect 0 and 1 using an arc with capacity of 4 and transit time of 6
+G.add_edges_from([
+    (0,  1, {'capacity': 4, 'transit': 6}), 
+])
+
+```
+
+The attibute names "balance", "capacity" and "transit" are default names in every implementation. If you decide to name the attributes differently, you have to specify this when calling one of the algorithms in this library. For example:
+``` Python
+quickest_transshipment(G, balance='b', capacity='c', transit='t')
+```
+
+### Compute a maximum flow over time:
 ``` Python
 from dynflows.flows.dynamic import max_flow_over_time
 
@@ -35,7 +59,7 @@ flow.get_excess(5, 8)
 value = max_flow_over_time(G, sources, sinks, T, return_flow=False)
 ```
 
-Decide feasibility of a dynamic transshipment instance:
+### Decide feasibility of a dynamic transshipment instance:
 ``` Python
 from dynflows.flows.dynamic import is_feasible
 
@@ -59,7 +83,7 @@ rslt, violated = is_feasible(G, T, return_violated=True)
 rslt, violated = is_feasible(G, T, return_violated=True, lazy=False)
 ```
 
-Compute an integral dynamic transshipment:
+### Compute an integral dynamic transshipment:
 ``` Python
 
 # ...
@@ -82,7 +106,7 @@ flow.get_flow_value(0, 1, 5)
 flow.get_excess(5, 8)
 ```
 
-Compute a quickest integral dyamic transshipment:
+### Compute a quickest integral dyamic transshipment:
 ``` Python
 
 # ...
