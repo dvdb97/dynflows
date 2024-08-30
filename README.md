@@ -1,5 +1,5 @@
 # dynflows
-A Python implementation of various algorithms for network flows over time. The algorithms implemented by this library are
+A Python implementation of various algorithms for network flows over time. This includes
 - the Ford-Fulkerson algorithm for maximum flows over time,
 - the algorithm for lex-max flows over time by Hoppe and Tardos,
 - Orlin's algorithm for submodular function minimization,
