@@ -58,3 +58,46 @@ rslt, violated = is_feasible(G, T, return_violated=True)
 # By setting lazy=False, the algorithm returns the global minimizer.
 rslt, violated = is_feasible(G, T, return_violated=True, lazy=False)
 ```
+
+Compute an integral dynamic transshipment:
+``` Python
+
+# ...
+# ... construct network ...
+# ...
+
+# Use the time horizon $`T = 50`$
+T = 50
+
+# Compute an integral dynamic transshipment using Orlin's algorithm for feasibility checks.
+flow = dynamic_transshipment(G, T)
+
+# Use the naive (brute-force) feasibility check instead:
+flow = dynamic_transshipment(G, T, method='naive')
+
+# How much does the flow send along an arc (0, 1) at time $`\theta=5`$?
+flow.get_flow_value(0, 1, 5)
+
+# What is the excess of vertex 5 at time $`\theta=8`$?
+flow.get_excess(5, 8)
+```
+
+Compute a quickest integral dyamic transshipment:
+``` Python
+
+# ...
+# ... construct network ...
+# ...
+
+# Compute the quickest transshipment and the corresponding time horizon using Orlin's algorithm and a binary search.
+flow, T = quickest_transshipment(G)
+
+# Use the naive (brute-force) feasibility check instead:
+flow, T = quickest_transshipment(G, sfm_method='naive)
+
+# How much does the flow send along an arc (10, 1) at time $`\theta=15`$?
+flow.get_flow_value(10, 1, 15)
+
+# What is the excess of vertex 3 at time $`\theta=20`$?
+flow.get_excess(3, 20)
+```
