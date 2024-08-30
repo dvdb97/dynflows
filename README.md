@@ -22,8 +22,8 @@ G = nx.DiGraph()
 
 # Add a source 0 with supply of 20 and a sink 1 with demand of -20
 G.add_nodes_from([
-    (0, {'balance': 20},
-    (1, {'balance': -20}
+    (0, {'balance': 20}),
+    (1, {'balance': -20})
 ])
 
 # Connect 0 and 1 using an arc with capacity of 4 and transit time of 6
