@@ -14,4 +14,20 @@ A Python implementation of various algorithms for network flows over time. This 
 
 # Usage
 
+Compute a maximum flow over time:
+``` Python
+# ... construct network ...
+# ...
 
+# Compute the maximum flow over time in the given network. Returns both the value and the flow.
+value, flow = max_flow_over_time(G, sources, sinks, T)
+
+# How much does the flow send along an arc (0, 1) at time $`\theta=5`$?
+flow.get_flow_value(0, 1, 5)
+
+# What is the excess of vertex 5 at time $`\theta=8`$?
+flow.get_excess(5, 8)
+
+# If you are not interested in the actual flow, you can only compute the value which is faster.
+value = max_flow_over_time(G, sources, sinks, T, return_flow=False)
+```
