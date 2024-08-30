@@ -4,7 +4,7 @@ import numpy as np
 from tqdm import tqdm
 from itertools import permutations
 
-from dynflows.flows.dynamic import max_flow_over_time, dynamic_transshipment, quickest_transshipment
+from dynflows.flows.dynamic import max_flow_over_time, dynamic_transshipment, quickest_transshipment, is_feasible
 from dynflows.flows.dynamic.transshipments import MaxOutFlow
 
 
@@ -65,8 +65,13 @@ T = 100
 
 print(len(G.nodes))
 
-value = max_flow_over_time(G, sources, sinks, T)
+value, flow = max_flow_over_time(G, sources, sinks, T)
 print(value)
+
+flow.get_flow_value(0, 1, 5)
+flow.get_excess(5, 8)
+
+
 
 # flow = dynamic_transshipment(G, T, method='orlin')
 # print(flow.get_net_value(terminals, T))

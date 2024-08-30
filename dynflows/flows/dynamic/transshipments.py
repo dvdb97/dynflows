@@ -235,7 +235,7 @@ def is_feasible(
         capacity='capacity', 
         transit='transit',
         method: Literal['orlin', 'naive'] = 'orlin',
-        return_minimizer: bool = False,
+        return_violated: bool = False,
         lazy: bool = True,
         max_flow_method: MaxOutFlow = None) -> bool:
     """Check feasibility of a dynamic transshipment instance (N, b, T).
@@ -247,15 +247,15 @@ def is_feasible(
         capacity (str, optional): The arc attribute representing arc capacities. Defaults to 'capacity'.
         transit (str, optional): The arc attribute representing arc transit times. Defaults to 'transit'.
         method (Literal'orlin', 'naive'], optional): The method to use for SFM. Defaults to 'orlin'.
-        return_minimizer (bool, optional): Whether to return the infeasible subset of terminals. Defaults to False.
+        return_violated (bool, optional): Whether to return the violated subset of terminals. Defaults to False.
 
     Returns:
         bool: Returns True iff the dynamic transshipment instance is feasible. 
     """
     if method == 'naive':
-        return __feasibility_naive(G, T, balance=balance, capacity=capacity, transit=transit, return_minimizer=return_minimizer, lazy=lazy, max_flow_method=max_flow_method)
+        return __feasibility_naive(G, T, balance=balance, capacity=capacity, transit=transit, return_minimizer=return_violated, lazy=lazy, max_flow_method=max_flow_method)
     elif method == 'orlin':
-        return __feasibility_orlin(G, T, balance=balance, capacity=capacity, transit=transit, return_minimizer=return_minimizer, lazy=lazy, max_flow_method=max_flow_method)
+        return __feasibility_orlin(G, T, balance=balance, capacity=capacity, transit=transit, return_minimizer=return_violated, lazy=lazy, max_flow_method=max_flow_method)
     else:
         raise NotImplementedError()
 
@@ -551,7 +551,7 @@ def __find_tight(
     G_ext.nodes[node][balance] = b
     G_ext.nodes[first_term][balance] += -b
 
-    feasible, tight_set = is_feasible(G_ext, T, balance, capacity, transit, method, return_minimizer=True, max_flow_method=max_flow_method)
+    feasible, tight_set = is_feasible(G_ext, T, balance, capacity, transit, method, return_violated=True, max_flow_method=max_flow_method)
 
     assert not feasible, "The constructed network has to be infeasible."
 
