@@ -644,7 +644,7 @@ def dynamic_transshipment(
                 is_tight = True
 
             if is_tight:
-                break
+                continue
             else:
                 # Add the first new terminal.
                 n1 = (n, counters[n]+1)
@@ -803,7 +803,11 @@ def quickest_transshipment(
     """
     assert sum(b for _, b in G.nodes(data=balance, default=0)) == 0, "The sum of balances must be 0!"
 
-    max_out_flow = MaxOutFlow(G, balance, capacity, transit)
+    # If available, use the Rust backend.
+    if 'mcf_python' in sys.modules:
+        max_out_flow = MaxOutFlow(G, balance, capacity, transit)
+    else:
+        max_out_flow = None
 
     if sfm_method == 'naive':
         def feasibility_method(T: int, return_minimizer=False):

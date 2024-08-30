@@ -68,8 +68,9 @@ print(len(G.nodes))
 value = max_flow_over_time(G, sources, sinks, T)
 print(value)
 
-outflow = MaxOutFlow(G)
-print(outflow(sources, T))
+# flow = dynamic_transshipment(G, T, method='orlin')
+# print(flow.get_net_value(terminals, T))
 
-flow = dynamic_transshipment(G, T, method='orlin')
+flow, T = quickest_transshipment(G)
 print(flow.get_net_value(terminals, T))
+print(T)

@@ -4,7 +4,6 @@ from networkx import DiGraph
 from networkx.algorithms.flow.mincost import min_cost_flow
 
 from dynflows.flows.static.flow import StaticFlow
-from dynflows.flows.static.min_cost import min_cost_flow
 
 
 def min_cost_circulation(graph: DiGraph, capacity='capacity', weight='weight') -> StaticFlow:
@@ -17,7 +16,6 @@ def min_cost_circulation(graph: DiGraph, capacity='capacity', weight='weight') -
     :return: Returns a
     """
     flow = nx.min_cost_flow(graph, demand='NONE', capacity=capacity, weight=weight)
-    # flow = min_cost_flow(graph, balance='NONE', capacity=capacity, weight=weight)
 
     return StaticFlow(flow)
 

@@ -1,6 +1,6 @@
 import networkx as nx
 
-from itertools import combinations
+from itertools import product
 from networkx.algorithms.shortest_paths import shortest_path_length
 
 
@@ -26,7 +26,7 @@ def get_upper_bound_of_T(G: nx.DiGraph, balance='balance', transit='transit') ->
     max_length = 0
 
     # Find the longest shortest path between a source and a sink.
-    for source, sink in combinations(sources, sinks):
+    for source, sink in product(sources, sinks):
         length = shortest_path_length(G, source, sink, transit)
 
         if length > max_length:
