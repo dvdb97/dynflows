@@ -9,7 +9,8 @@ A Python implementation of various algorithms for network flows over time. This 
 
 # Install
 1. Clone this repository
-2. Install via `pip install .`
+2. Open a command line in the repository
+3. Install via `pip install -r requirements.txt .`
 
 # Usage
 
