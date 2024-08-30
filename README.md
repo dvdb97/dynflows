@@ -16,6 +16,9 @@ A Python implementation of various algorithms for network flows over time. This 
 
 Compute a maximum flow over time:
 ``` Python
+from dynflows.flows.dynamic import max_flow_over_time
+
+# ...
 # ... construct network ...
 # ...
 
@@ -30,4 +33,28 @@ flow.get_excess(5, 8)
 
 # If you are not interested in the actual flow, you can only compute the value which is faster.
 value = max_flow_over_time(G, sources, sinks, T, return_flow=False)
+```
+
+Decide feasibility of a dynamic transshipment instance:
+``` Python
+from dynflows.flows.dynamic import is_feasible
+
+# ...
+# ... construct network ...
+# ...
+
+# Check for the time horizon $`T=50`$
+T = 50
+
+# Check feasibility using Orlin's algorithm
+rslt = is_feasible(G, T)
+
+# Check feasibility using the brute force approach which tends to be faster for smaller instances.
+rslt = is_feasible(G, T, method='naive')
+
+# Sometimes we are also interested in the violated set that makes the dynamic transshipment instance infeasible, or the minimizer if feasible.
+rslt, violated = is_feasible(G, T, return_violated=True)
+
+# By setting lazy=False, the algorithm returns the global minimizer.
+rslt, violated = is_feasible(G, T, return_violated=True, lazy=False)
 ```
