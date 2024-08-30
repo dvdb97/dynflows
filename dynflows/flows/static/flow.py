@@ -215,7 +215,14 @@ class StaticFlow:
         while len(graph.edges()) != 0:
             # Get an arbitrary arc from the network.
             if start_in != []:
-                arc = next(chain(*[list(graph.out_edges(node)) for node in start_in]))
+                arcs = list(chain(*[list(graph.out_edges(node)) for node in start_in]))
+
+                for arc in arcs:
+                    if arc[-1] == 'psi':
+                        break
+
+                if arc[-1] != 'psi':
+                    arc = arcs[-1]               
             else:
                 arc = next(e for e in graph.edges())
 

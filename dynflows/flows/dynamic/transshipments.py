@@ -740,13 +740,17 @@ def dynamic_transshipment(
                 
                 # Add the new sets to the chain.
                 if is_source:
-                    chain.insert(i+1, W | Q_2)
+                    if Q_2 | (R & W) != R:
+                        chain.insert(i+1, Q_2 | (R & W))
+
                     chain.insert(i+1, Q_2)
                     chain.insert(i+1, Q_1)
                 else:
                     chain.insert(i+1, Q_1)
                     chain.insert(i+1, R)
-                    chain.insert(i+1, W | Q)
+
+                    if Q | (R & W) != R:
+                        chain.insert(i+1, Q | (R & W))
 
                 # Update the counter for this terminal
                 counters[n] += 2
