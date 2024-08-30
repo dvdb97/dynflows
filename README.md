@@ -122,7 +122,7 @@ from dynflows.flows.dynamic import quickest_transshipment
 flow, T = quickest_transshipment(G)
 
 # Use the naive (brute-force) feasibility check instead:
-flow, T = quickest_transshipment(G, sfm_method='naive)
+flow, T = quickest_transshipment(G, sfm_method='naive')
 
 # How much does the flow send along an arc (10, 1) at time $`\theta=15`$?
 flow.get_flow_value(10, 1, 15)
